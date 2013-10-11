@@ -44,7 +44,7 @@ typedef enum {
 @property (nonatomic) BOOL onlyShowCurrentMonth;
 @property (nonatomic) BOOL adaptHeightToNumberOfWeeksInMonth;
 
-@property (nonatomic, weak) id<CKCalendarDelegate> delegate;
+@property (nonatomic, strong) id<CKCalendarDelegate> delegate;
 
 // Theming
 @property (nonatomic, strong) UIFont *titleFont;
@@ -57,7 +57,8 @@ typedef enum {
 - (void)setInnerBorderColor:(UIColor *)color;
 - (void)setDayOfWeekBottomColor:(UIColor *)bottomColor topColor:(UIColor *)topColor;
 
-- (void)selectDate:(NSDate *)date makeVisible:(BOOL)visible;
+- (void)selectStartDate:(NSDate *)date makeVisible:(BOOL)visible;
+- (void)selectEndDate:(NSDate *)date makeVisible:(BOOL)visible;
 - (void)reloadData;
 - (void)reloadDates:(NSArray *)dates;
 
@@ -72,7 +73,8 @@ typedef enum {
 @optional
 - (void)calendar:(CKCalendarView *)calendar configureDateItem:(CKDateItem *)dateItem forDate:(NSDate *)date;
 - (BOOL)calendar:(CKCalendarView *)calendar willSelectDate:(NSDate *)date;
-- (void)calendar:(CKCalendarView *)calendar didSelectDate:(NSDate *)date;
+- (void)calendar:(CKCalendarView *)calendar didSelectStartDate:(NSDate *)date;
+- (void)calendar:(CKCalendarView *)calendar didSelectEndDate:(NSDate *)date;
 - (BOOL)calendar:(CKCalendarView *)calendar willDeselectDate:(NSDate *)date;
 - (void)calendar:(CKCalendarView *)calendar didDeselectDate:(NSDate *)date;
 

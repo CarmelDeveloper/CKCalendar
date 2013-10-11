@@ -93,7 +93,7 @@
     self = [super init];
     if (self) {
         self.backgroundColor = UIColorFromRGB(0xF2F2F2);
-        self.selectedBackgroundColor = UIColorFromRGB(0x88B6DB);
+        self.selectedBackgroundColor = UIColorFromRGB(0x0272ed);
         self.textColor = UIColorFromRGB(0x393B40);
         self.selectedTextColor = UIColorFromRGB(0xF2F2F2);
     }
@@ -114,8 +114,9 @@
 @property(nonatomic, strong) NSMutableArray *dateButtons;
 @property(nonatomic, strong) NSDateFormatter *dateFormatter;
 
+@property (nonatomic, strong) NSDate *startDate;
+@property (nonatomic, strong) NSDate *endDate;
 @property (nonatomic, strong) NSDate *monthShowing;
-@property (nonatomic, strong) NSDate *selectedDate;
 @property (nonatomic, strong) NSCalendar *calendar;
 @property(nonatomic, assign) CGFloat cellWidth;
 
@@ -310,10 +311,16 @@
             [self.delegate calendar:self configureDateItem:item forDate:date];
         }
 
-        if (self.selectedDate && [self date:self.selectedDate isSameDayAsDate:date]) {
+        if (self.startDate && [self date:self.startDate isSameDayAsDate:date]) {
             [dateButton setTitleColor:item.selectedTextColor forState:UIControlStateNormal];
             dateButton.backgroundColor = item.selectedBackgroundColor;
-        } else {
+        } else if (self.endDate && [self date:self.endDate isSameDayAsDate:date]) {
+            [dateButton setTitleColor:item.selectedTextColor forState:UIControlStateNormal];
+            dateButton.backgroundColor = item.selectedBackgroundColor;
+        } else if (self.startDate && self.endDate && ([self.startDate compare:date] == NSOrderedAscending) && ([self.endDate compare:date] == NSOrderedDescending)) {
+            [dateButton setTitleColor:item.selectedTextColor forState:UIControlStateNormal];
+            dateButton.backgroundColor = item.selectedBackgroundColor;
+        }else{
             [dateButton setTitleColor:item.textColor forState:UIControlStateNormal];
             dateButton.backgroundColor = item.backgroundColor;
         }
@@ -390,15 +397,30 @@
     [self setNeedsLayout];
 }
 
-- (void)selectDate:(NSDate *)date makeVisible:(BOOL)visible {
+- (void)selectStartDate:(NSDate *)date makeVisible:(BOOL)visible {
     NSMutableArray *datesToReload = [NSMutableArray array];
-    if (self.selectedDate) {
-        [datesToReload addObject:self.selectedDate];
+    if (self.startDate) {
+        [datesToReload addObject:self.startDate];
     }
     if (date) {
         [datesToReload addObject:date];
     }
-    self.selectedDate = date;
+    self.startDate = date;
+    [self reloadDates:datesToReload];
+    if (visible && date) {
+        self.monthShowing = date;
+    }
+}
+
+- (void)selectEndDate:(NSDate *)date makeVisible:(BOOL)visible {
+    NSMutableArray *datesToReload = [NSMutableArray array];
+    if (self.endDate) {
+        [datesToReload addObject:self.endDate];
+    }
+    if (date) {
+        [datesToReload addObject:date];
+    }
+    self.endDate = date;
     [self reloadDates:datesToReload];
     if (visible && date) {
         self.monthShowing = date;
@@ -406,7 +428,8 @@
 }
 
 - (void)reloadData {
-    self.selectedDate = nil;
+    self.startDate = nil;
+    self.endDate = nil;
     [self setNeedsLayout];
 }
 
@@ -469,7 +492,7 @@
 - (void)_dateButtonPressed:(id)sender {
     DateButton *dateButton = sender;
     NSDate *date = dateButton.date;
-    if ([date isEqualToDate:self.selectedDate]) {
+    if ([date isEqualToDate:self.startDate] || [date isEqualToDate:self.endDate]) {
         // deselection..
         if ([self.delegate respondsToSelector:@selector(calendar:willDeselectDate:)] && ![self.delegate calendar:self willDeselectDate:date]) {
             return;
@@ -478,9 +501,33 @@
     } else if ([self.delegate respondsToSelector:@selector(calendar:willSelectDate:)] && ![self.delegate calendar:self willSelectDate:date]) {
         return;
     }
-
-    [self selectDate:date makeVisible:YES];
-    [self.delegate calendar:self didSelectDate:date];
+    
+    if (self.startDate == nil) {
+        [self selectStartDate:date makeVisible:YES];
+        [self.delegate calendar:self didSelectStartDate:self.startDate];
+    } else if (self.endDate == nil  && !([self.startDate compare:date] == NSOrderedDescending)){
+        if ([self.startDate compare:date] == NSOrderedSame) {
+            date = self.startDate;
+        }
+        [self selectEndDate:date makeVisible:YES];
+        [self.delegate calendar:self didSelectEndDate:self.endDate];
+    } else {
+        self.endDate = nil;
+        if ([self.startDate compare:date] == NSOrderedSame) {
+            date = self.startDate;
+        }
+        [self selectStartDate:date makeVisible:YES];
+        [self.delegate calendar:self didSelectStartDate:date];
+        
+        NSDate *now = [NSDate date];
+        NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+        NSDateComponents *components = [calendar components:NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit fromDate:now];
+        [components setMonth:1];
+        [components setDay:1];
+        [components setYear:1970];
+        NSDate *nilDate = [calendar dateFromComponents:components];
+        [self.delegate calendar:self didSelectEndDate:nilDate];
+    }
     [self setNeedsLayout];
 }
 
