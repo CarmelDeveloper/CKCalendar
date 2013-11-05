@@ -502,6 +502,13 @@
         return;
     }
     
+    NSDate *now = [NSDate date];
+    NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    NSDateComponents *components = [calendar components:NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit fromDate:now];
+    NSDate *currentDate = [calendar dateFromComponents:components];
+    if ([date compare:currentDate] == NSOrderedAscending)
+        return;
+    
     if (self.startDate == nil) {
         [self selectStartDate:date makeVisible:YES];
         [self.delegate calendar:self didSelectStartDate:self.startDate];
@@ -519,7 +526,6 @@
         [self selectStartDate:date makeVisible:YES];
         [self.delegate calendar:self didSelectStartDate:date];
         
-        NSDate *now = [NSDate date];
         NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
         NSDateComponents *components = [calendar components:NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit fromDate:now];
         [components setMonth:1];
